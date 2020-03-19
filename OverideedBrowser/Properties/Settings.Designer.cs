@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace OverideedBrowser.Properties
+namespace OverriddenBrowser.Properties
 {
 
 
